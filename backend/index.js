@@ -24,7 +24,7 @@ const app = express()
 app.use(cookieParser())
 app.use(express.json())
 app.use(cors({ 
-   origin:"https://vidora-urkl.vercel.app/",
+   origin:"https://vidora-urkl.vercel.app",
    credentials:true
 }))
 
