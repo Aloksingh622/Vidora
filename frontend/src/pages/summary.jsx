@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// Import AlertTriangle, which is used in your error block
 import { Clock, Play, Copy, Check, RefreshCw, Zap, ArrowRight, AlertTriangle } from 'lucide-react';
 import Logo from '../assets/youtube.png';
 import { serverUrl } from '../App';

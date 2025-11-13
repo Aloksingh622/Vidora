@@ -2,6 +2,8 @@ import React from "react";
 import { useSelector } from "react-redux";
 import ShortsCard from "./ShortsCard";
 import { SiYoutubeshorts } from "react-icons/si";
+import short from "../assets/short.png";
+
 
 const ShortsPage = () => {
   const { allShortData } = useSelector((state) => state.content) || {};
@@ -11,7 +13,7 @@ const ShortsPage = () => {
     <div className="px-6 py-4">
       {/* Heading */}
       <h2 className="text-xl font-bold mb-4 flex items-center gap-1">
-        <SiYoutubeshorts className="w-6 h-6 text-red-600" />
+       <img src={short} className="w-7" alt="" />
         Shorts
       </h2>
 
