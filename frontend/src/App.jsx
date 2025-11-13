@@ -45,7 +45,7 @@ import GenerateThumbnail from './pages/GenerateThumbnail'
 import YouTubeAnalysis from './pages/aidescription'
 import Summary from './pages/summary'
 
-export const serverUrl = "https://vidora-flame.vercel.app/"
+export const serverUrl = "https://vidora-flame.vercel.app"
 
 const ProtectedRoute = ({ userData, children }) => {
   if (!userData) {
