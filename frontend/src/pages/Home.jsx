@@ -12,11 +12,9 @@ import {
   FaMicrophone,
   FaTimes,
   FaPlus,
-
 } from "react-icons/fa";
 import { MdAutoAwesome } from "react-icons/md";
 import { SiGoogledisplayandvideo360 } from "react-icons/si";
-
 import { IoIosAddCircle } from "react-icons/io";
 import { GoVideo } from "react-icons/go";
 import { SiYoutubeshorts } from "react-icons/si";
@@ -33,6 +31,7 @@ import { ClipLoader } from "react-spinners";
 import FilterResults from "./FilterResult";
 import RecommendationContent from "./RecommendationContent";
 import UseGetSubscribedContent from "../customHooks/UseGetSubscribedContent";
+import RenderColdStartLoader from "../component/RenderColdStartLoader";
 
 function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -43,11 +42,12 @@ function Home() {
   const [filterData, setFilterData] = useState(null);
   const [popUp, setPopUp] = useState(false);
   const [listening, setListening] = useState(false);
+  const [serverReady, setServerReady] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const [loading, setLoading] = useState(false)
-  const [loading1, setLoading1] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [loading1, setLoading1] = useState(false);
   const { userData, subscribeChannel } = useSelector((state) => state.user);
 
   const categories = [
@@ -71,7 +71,6 @@ function Home() {
     recognitionRef.current.continuous = false;
     recognitionRef.current.interimResults = false;
     recognitionRef.current.lang = "en-US";
-
   }
 
   const handleSearch = async () => {
@@ -101,9 +100,9 @@ function Home() {
       setListening(false);
 
       if (err.error === "no-speech") {
-        setAlertMessage("No speech detected. Please try again.");
+        CustomAlert("No speech detected. Please try again.");
       } else {
-        setAlertMessage("Voice search failed. Try again.");
+        CustomAlert("Voice search failed. Try again.");
       }
     };
 
@@ -122,7 +121,7 @@ function Home() {
       );
       setSearchData(result.data);
       console.log(result.data);
-      navigate("/")
+      navigate("/");
       setInput("");
       setPopUp(false);
       setLoading(false);
@@ -145,8 +144,9 @@ function Home() {
       setLoading(false);
     }
   };
+
   const handleCategoryFilter = async (category) => {
-    setLoading1(true)
+    setLoading1(true);
     try {
       const result = await axios.post(
         serverUrl + "/api/content/filter",
@@ -156,7 +156,6 @@ function Home() {
 
       const { videos = [], shorts = [], channels = [] } = result.data;
 
-      // ✅ Channels ke videos aur shorts merge karo
       let channelVideos = [];
       let channelShorts = [];
       channels.forEach((ch) => {
@@ -169,16 +168,14 @@ function Home() {
         videos: [...videos, ...channelVideos],
         shorts: [...shorts, ...channelShorts],
       });
-      setLoading1(false)
-      navigate("/")
+      setLoading1(false);
+      navigate("/");
 
       console.log("Category filter merged:", {
         ...result.data,
         videos: [...videos, ...channelVideos],
         shorts: [...shorts, ...channelShorts],
       });
-
-
 
       if (
         videos.length > 0 ||
@@ -192,21 +189,23 @@ function Home() {
       }
     } catch (error) {
       console.error("Category filter error:", error);
-      setLoading1(false)
-
+      setLoading1(false);
     }
   };
 
-  UseGetSubscribedContent()
+  UseGetSubscribedContent();
 
+  // Show cold start loader until server is ready
+  if (!serverReady) {
+    return <RenderColdStartLoader serverUrl={serverUrl} onReady={() => setServerReady(true)} />;
+  }
 
   return (
     <div className="bg-[#0f0f0f] text-white min-h-screen relative">
-
+      {/* Rest of your component code remains exactly the same */}
       {popUp && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-[#1f1f1f]/90 backdrop-blur-md rounded-2xl shadow-2xl w-[90%] max-w-md min-h-[400px] sm:min-h-[480px] p-8 flex flex-col items-center justify-between gap-8 relative border border-gray-700 transition-all duration-300">
-
             <button
               className="absolute top-4 right-4 text-gray-400 hover:text-white transition"
               onClick={() => setPopUp(false)}
@@ -250,10 +249,11 @@ function Home() {
             </div>
 
             <button
-              className={`p-6 rounded-full shadow-xl transition-all duration-300 transform hover:scale-110 ${listening
-                ? "bg-red-500 animate-pulse shadow-red-500/40"
-                : "bg-orange-500 hover:bg-orange-600 shadow-orange-500/40"
-                }`}
+              className={`p-6 rounded-full shadow-xl transition-all duration-300 transform hover:scale-110 ${
+                listening
+                  ? "bg-red-500 animate-pulse shadow-red-500/40"
+                  : "bg-orange-500 hover:bg-orange-600 shadow-orange-500/40"
+              }`}
               onClick={handleSearch}
               disabled={loading}
             >
@@ -267,11 +267,8 @@ function Home() {
         </div>
       )}
 
-
-
       <header className="bg-black/95 backdrop-blur-sm h-15 p-3 border-b border-slate-800/50 fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center justify-between">
-          {/* Left Section */}
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -280,7 +277,6 @@ function Home() {
               <FaBars style={{ color: '#795d3f' }} />
             </button>
 
-            {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="relative">
                 <img src={logo} alt="Logo" className="w-[50px] drop-shadow-lg" />
@@ -297,40 +293,37 @@ function Home() {
             </div>
           </div>
 
-          {/* Center - Search */}
-         <div className="hidden md:flex items-center gap-2 flex-1 max-w-xl">
-  <div className="flex flex-1">
-    <input
-      type="text"
-      placeholder="Search"
-      className="flex-1 bg-slate-950/50 px-4 py-2 rounded-l-full outline-none border-2 border-slate-800/50 text-white placeholder-slate-500 focus:border-[#795d3f]/50 focus:ring-2 focus:ring-[#795d3f]/20 transition-all"
-      onChange={(e) => setInput(e.target.value)}
-      value={input}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' && !loading) {
-          handleSearchData(input);
-        }
-      }}
-    />
-    <button
-      className="bg-slate-900/60 hover:bg-[#795d3f]/20 px-5 rounded-r-full border-2 border-l-0 border-slate-800/50 hover:border-[#795d3f]/50 transition-all"
-      onClick={() => handleSearchData(input)}
-      disabled={loading}
-    >
-      {loading ? <ClipLoader size={18} color="#795d3f" /> : <FaSearch className="text-slate-300" />}
-    </button>
-  </div>
-  <button
-    className="bg-slate-900/60 hover:bg-[#795d3f]/20 p-3 rounded-full border border-slate-800/50 hover:border-[#795d3f]/50 transition-all"
-    onClick={() => setPopUp(true)}
-  >
-    <FaMicrophone className="text-slate-300" />
-  </button>
-</div>
+          <div className="hidden md:flex items-center gap-2 flex-1 max-w-xl">
+            <div className="flex flex-1">
+              <input
+                type="text"
+                placeholder="Search"
+                className="flex-1 bg-slate-950/50 px-4 py-2 rounded-l-full outline-none border-2 border-slate-800/50 text-white placeholder-slate-500 focus:border-[#795d3f]/50 focus:ring-2 focus:ring-[#795d3f]/20 transition-all"
+                onChange={(e) => setInput(e.target.value)}
+                value={input}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !loading) {
+                    handleSearchData(input);
+                  }
+                }}
+              />
+              <button
+                className="bg-slate-900/60 hover:bg-[#795d3f]/20 px-5 rounded-r-full border-2 border-l-0 border-slate-800/50 hover:border-[#795d3f]/50 transition-all"
+                onClick={() => handleSearchData(input)}
+                disabled={loading}
+              >
+                {loading ? <ClipLoader size={18} color="#795d3f" /> : <FaSearch className="text-slate-300" />}
+              </button>
+            </div>
+            <button
+              className="bg-slate-900/60 hover:bg-[#795d3f]/20 p-3 rounded-full border border-slate-800/50 hover:border-[#795d3f]/50 transition-all"
+              onClick={() => setPopUp(true)}
+            >
+              <FaMicrophone className="text-slate-300" />
+            </button>
+          </div>
 
-          {/* Right Section */}
           <div className="flex items-center gap-3">
-            {/* Summarise Button */}
             <button
               className="hidden md:flex items-center gap-2 bg-gradient-to-r from-[#795d3f]/20 to-[#795d3f]/10 hover:from-[#795d3f]/30 hover:to-[#795d3f]/20 text-[#efaf6a] px-4 py-2 rounded-full cursor-pointer transition-all border border-[#795d3f]/30 hover:border-[#795d3f]/50 shadow-lg shadow-[#795d3f]/10 font-semibold"
               onClick={() => navigate("/summary")}
@@ -339,10 +332,9 @@ function Home() {
               <span className="text-sm">Summarise</span>
             </button>
 
-            {/* Create Button */}
             {userData?.channel && (
               <button
-                className="hidden md:flex items-center gap-2 bg-gradient-to-r from-[#795d3f]/20 to-[#795d3f]/10 hover:from-[#795d3f]/30 hover:to-[#795d3f]/20 text-[#efaf6a]  px-4 py-2 rounded-full cursor-pointer transition-all border border-slate-800/50 hover:border-[#795d3f]/30 font-medium"
+                className="hidden md:flex items-center gap-2 bg-gradient-to-r from-[#795d3f]/20 to-[#795d3f]/10 hover:from-[#795d3f]/30 hover:to-[#795d3f]/20 text-[#efaf6a] px-4 py-2 rounded-full cursor-pointer transition-all border border-slate-800/50 hover:border-[#795d3f]/30 font-medium"
                 onClick={() => navigate("/createpage")}
               >
                 <span className="text-xl font-bold">+</span>
@@ -350,7 +342,6 @@ function Home() {
               </button>
             )}
 
-        
             {!userData?.photoUrl ? (
               <FaUserCircle
                 className="text-3xl hidden md:flex text-slate-400 hover:text-[#795d3f] cursor-pointer transition-colors"
@@ -368,7 +359,6 @@ function Home() {
               </div>
             )}
 
-            {/* Mobile Search Icon */}
             <button
               className="text-lg md:hidden flex text-slate-300 hover:text-[#795d3f] transition-colors"
               onClick={() => setPopUp(true)}
@@ -379,14 +369,13 @@ function Home() {
         </div>
       </header>
 
-      
       <aside
         className={`bg-[#0f0f0f] border-r border-gray-800 transition-all duration-300 fixed top-[60px] bottom-0 z-40
           ${sidebarOpen ? "w-60" : "w-20"} hidden md:flex flex-col overflow-y-auto`}
       >
         <nav className="space-y-1 mt-3">
           <SidebarItem icon={<FaHome style={{ color: '#795d3f' }} />} text="Home" open={sidebarOpen} selected={selectedItem === "Home"} onClick={() => { setSelectedItem("Home"); navigate("/"); }} />
-          <SidebarItem icon={<SiGoogledisplayandvideo360 className=" text-[#795d3f] "  />} text="Shorts" open={sidebarOpen} selected={selectedItem === "Shorts"} onClick={() => { setSelectedItem("Shorts"); navigate("/shorts"); }} />
+          <SidebarItem icon={<SiGoogledisplayandvideo360 className=" text-[#795d3f] " />} text="Shorts" open={sidebarOpen} selected={selectedItem === "Shorts"} onClick={() => { setSelectedItem("Shorts"); navigate("/shorts"); }} />
           <SidebarItem icon={<MdOutlineSubscriptions style={{ color: '#795d3f' }} />} text="Subscriptions" open={sidebarOpen} selected={selectedItem === "Subscriptions"} onClick={() => { setSelectedItem("Subscriptions"); navigate("/subscribepage"); }} />
         </nav>
 
@@ -394,7 +383,7 @@ function Home() {
 
         {sidebarOpen && <p className="text-sm text-gray-400 px-2">You</p>}
         <nav className="space-y-1 mt-1">
-          <SidebarItem icon={< FaHistory style={{ color: '#795d3f' }} />}  text="History" open={sidebarOpen} selected={selectedItem === "History"} onClick={() => { setSelectedItem("History"); navigate("/history"); }} />
+          <SidebarItem icon={<FaHistory style={{ color: '#795d3f' }} />} text="History" open={sidebarOpen} selected={selectedItem === "History"} onClick={() => { setSelectedItem("History"); navigate("/history"); }} />
           <SidebarItem icon={<FaList style={{ color: '#795d3f' }} />} text="Playlists" open={sidebarOpen} selected={selectedItem === "Playlists"} onClick={() => { setSelectedItem("Playlists"); navigate("/saveplaylist"); }} />
           <SidebarItem icon={<GoVideo style={{ color: '#795d3f' }} />} text="Save videos" open={sidebarOpen} selected={selectedItem === "Save videos"} onClick={() => { setSelectedItem("Save videos"); navigate("/savevideos"); }} />
           <SidebarItem icon={<FaThumbsUp style={{ color: '#795d3f' }} />} text="Liked videos" open={sidebarOpen} selected={selectedItem === "Liked videos"} onClick={() => { setSelectedItem("Liked videos"); navigate("/likedvideos"); }} />
@@ -412,11 +401,11 @@ function Home() {
                 setSelectedItem(item._id);
                 navigate(`/channelpage/${item._id}`);
               }}
-              className={`flex items-center ${sidebarOpen ? "gap-3 justify-start" : "justify-center"
-                } w-full text-left cursor-pointer p-2 rounded-lg transition ${selectedItem === item._id
-                  ? "bg-[#272727]"
-                  : "hover:bg-gray-800"
-                }`}
+              className={`flex items-center ${
+                sidebarOpen ? "gap-3 justify-start" : "justify-center"
+              } w-full text-left cursor-pointer p-2 rounded-lg transition ${
+                selectedItem === item._id ? "bg-[#272727]" : "hover:bg-gray-800"
+              }`}
             >
               <img
                 src={item.avatar}
@@ -429,7 +418,6 @@ function Home() {
             </button>
           ))}
         </nav>
-
       </aside>
 
       <main className={`overflow-y-auto p-4 flex flex-col pb-16 transition-all duration-300 ${sidebarOpen ? "md:ml-60" : "md:ml-20"}`}>
@@ -439,20 +427,17 @@ function Home() {
               {categories.map((cat, idx) => (
                 <button
                   key={idx}
-                  className="whitespace-nowrap bg-[#272727] px-4 py-1 rounded-lg text-sm hover:bg-gray-700" disabled={loading1}
-                  onClick={() => handleCategoryFilter(cat)}  
+                  className="whitespace-nowrap bg-[#272727] px-4 py-1 rounded-lg text-sm hover:bg-gray-700"
+                  disabled={loading1}
+                  onClick={() => handleCategoryFilter(cat)}
                 >
                   {cat}
-
                 </button>
-
               ))}
-
             </div>
 
-
             <div className="mt-6">
-              <div className="w-full items-center flex justify-center ">{loading1 ? <ClipLoader size={50} color="white" /> : ""}</div>
+              <div className="w-full items-center flex justify-center">{loading1 ? <ClipLoader size={50} color="white" /> : ""}</div>
               {searchData && <SearchResults searchResults={searchData} />}
               {filterData && <FilterResults filterResults={filterData} />}
 
@@ -474,7 +459,6 @@ function Home() {
         </div>
       </main>
 
-     
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0f0f0f] border-t border-gray-800 flex justify-around py-2 z-10">
         <MobileNavItem onClick={() => navigate("/")} icon={<FaHome />} text="Home" />
         <MobileNavItem onClick={() => navigate("/shorts")} icon={<SiYoutubeshorts />} text="Shorts" />

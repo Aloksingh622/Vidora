@@ -92,8 +92,9 @@ app.use("/api/auth",authRouter)
 app.use("/api/user",userRouter)
 app.use("/api/content",contentRouter)
 app.use('/api/thumbnail', thumbnailRoutes);
-
-
+app.get('/api/health', (req, res) => {
+     res.status(200).json({ status: 'ok' });
+});
 
 
 
