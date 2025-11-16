@@ -43,6 +43,7 @@ function Home() {
   const [popUp, setPopUp] = useState(false);
   const [listening, setListening] = useState(false);
   const [serverReady, setServerReady] = useState(false);
+  const [contentLoading, setContentLoading] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -113,6 +114,10 @@ function Home() {
 
   const handleSearchData = async (query) => {
     setLoading(true);
+    setContentLoading(true);
+    setSearchData(null); // Clear previous results
+    setFilterData(null);
+    
     try {
       const result = await axios.post(
         serverUrl + "/api/content/search",
@@ -125,6 +130,7 @@ function Home() {
       setInput("");
       setPopUp(false);
       setLoading(false);
+      setContentLoading(false);
 
       const { videos = [], shorts = [], playlists = [], channels = [] } = result.data;
 
@@ -142,11 +148,16 @@ function Home() {
       console.error(error);
       setPopUp(false);
       setLoading(false);
+      setContentLoading(false);
     }
   };
 
   const handleCategoryFilter = async (category) => {
     setLoading1(true);
+    setContentLoading(true);
+    setSearchData(null); // Clear previous results
+    setFilterData(null);
+    
     try {
       const result = await axios.post(
         serverUrl + "/api/content/filter",
@@ -169,6 +180,7 @@ function Home() {
         shorts: [...shorts, ...channelShorts],
       });
       setLoading1(false);
+      setContentLoading(false);
       navigate("/");
 
       console.log("Category filter merged:", {
@@ -190,6 +202,7 @@ function Home() {
     } catch (error) {
       console.error("Category filter error:", error);
       setLoading1(false);
+      setContentLoading(false);
     }
   };
 
@@ -202,7 +215,6 @@ function Home() {
 
   return (
     <div className="bg-[#0f0f0f] text-white min-h-screen relative">
-      {/* Rest of your component code remains exactly the same */}
       {popUp && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 animate-fadeIn">
           <div className="bg-[#1f1f1f]/90 backdrop-blur-md rounded-2xl shadow-2xl w-[90%] max-w-md min-h-[400px] sm:min-h-[480px] p-8 flex flex-col items-center justify-between gap-8 relative border border-gray-700 transition-all duration-300">
@@ -427,8 +439,8 @@ function Home() {
               {categories.map((cat, idx) => (
                 <button
                   key={idx}
-                  className="whitespace-nowrap bg-[#272727] px-4 py-1 rounded-lg text-sm hover:bg-gray-700"
-                  disabled={loading1}
+                  className="whitespace-nowrap bg-[#272727] px-4 py-1 rounded-lg text-sm hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  disabled={loading1 || contentLoading}
                   onClick={() => handleCategoryFilter(cat)}
                 >
                   {cat}
@@ -437,16 +449,37 @@ function Home() {
             </div>
 
             <div className="mt-6">
-              <div className="w-full items-center flex justify-center">{loading1 ? <ClipLoader size={50} color="white" /> : ""}</div>
-              {searchData && <SearchResults searchResults={searchData} />}
-              {filterData && <FilterResults filterResults={filterData} />}
-
-              {userData ? (
-                <RecommendationContent />
+              {/* Content Loading State */}
+              {contentLoading ? (
+                <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
+                  <div className="relative">
+                    <ClipLoader size={60} color="#efaf6a" />
+                    <div className="absolute inset-0 bg-[#efaf6a]/10 blur-2xl rounded-full animate-pulse"></div>
+                  </div>
+                  <div className="text-center space-y-2">
+                    <p className="text-[#efaf6a] text-lg font-semibold animate-pulse">
+                      Loading content...
+                    </p>
+                    <p className="text-slate-400 text-sm">
+                      Please wait while we fetch the best results for you
+                    </p>
+                  </div>
+                </div>
               ) : (
                 <>
-                  <AllVideosPage />
-                  <ShortsPage />
+                  {searchData && <SearchResults searchResults={searchData} />}
+                  {filterData && <FilterResults filterResults={filterData} />}
+
+                  {!searchData && !filterData && (
+                    userData ? (
+                      <RecommendationContent />
+                    ) : (
+                      <>
+                        <AllVideosPage />
+                        <ShortsPage />
+                      </>
+                    )
+                  )}
                 </>
               )}
             </div>
